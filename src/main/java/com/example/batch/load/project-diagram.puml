@@ -1,0 +1,250 @@
+@startuml
+' ===== Project Package Structure =====
+skinparam packageStyle rectangle
+
+package com.example.batch.load {
+
+    ' ===== Config Package =====
+    package config {
+        class BatchConfig {
+            +updateTnUploadJob()
+            +updateJobsStep()
+            +updateTasksStep()
+            +importSkillsJob(jobRepository, skillLoadStep, listener)
+            +skillLoadStep()
+            +msJobLoadStep()
+            +importJobStep()
+            +tnUploadStep()
+        }
+
+        class SecurityConfig {
+            +authenticationProvider()
+            +authenticationManager()
+            +securityFilterChain()
+        }
+
+        class SwaggerConfig {
+            +customOpenAPI()
+        }
+    }
+
+    ' ===== Controller Package =====
+    package controller {
+        class SkillController {
+            +getAllData()
+            +getById(id)
+            +createOrUpdate(skillDetails)
+            +deleteById(id)
+            +getAllJobData()
+            +getAllTaskData()
+            +getAllJobIds()
+            +getAllTaskIds()
+            +updateTnUploadWithJobIds()
+            +updateTnUploadWithTaskIds()
+            +deleteByJobId(id)
+            +deleteByTaskId(id)
+            +deleteByTnUploadId(id)
+        }
+
+        class AuthController {
+            +login(request)
+        }
+    }
+
+    ' ===== Entity Package =====
+    package entity {
+        class TnSkillUploadDetails
+        class MsJobs
+        class MsTasks
+        class TnUpload
+    }
+
+    ' ===== Listener Package =====
+    package listener {
+        class JobCompletionNotificationListener {
+            +beforeJob(jobExecution: JobExecution)
+            +afterJob(jobExecution: JobExecution)
+        }
+    }
+
+    ' ===== Processor Package =====
+    package processor {
+        class TaskUploadProcessor {
+            +process(task: MsTasks) : TnUpload
+        }
+    }
+
+    ' ===== Reader Package =====
+    package reader {
+        class ExcelItemReader<T> {
+            +read() : T
+        }
+        class MsJobReader {
+            +read() : MsJobs
+        }
+        class MsTaskReader {
+            +read() : MsTasks
+        }
+    }
+
+    ' ===== Repository Package =====
+    package repo {
+        interface MsJobRepository {
+            +findAllJobIds() : List<Integer>
+        }
+        interface MsTaskRepository {
+            +findAllTaskIds() : List<Integer>
+        }
+        interface SkillRepository {
+            +save(entity: TnSkillUploadDetails)
+            +findAll() : List<TnSkillUploadDetails>
+            +findById(id: Integer) : Optional<TnSkillUploadDetails>
+            +deleteById(id: Integer)
+        }
+        interface TnUploadRepository {
+            +findByJobIdAndTaskId(jobId: Integer, taskId: Integer) : Optional<TnUpload>
+            +deleteByJobId(jobId: Integer)
+            +deleteByTaskId(taskId: Integer)
+        }
+    }
+
+    ' ===== Row Mapper Package =====
+    package "row.mapper" {
+        class SkillStepListener {
+            +beforeStep(stepExecution: StepExecution)
+            +afterStep(stepExecution: StepExecution) : ExitStatus
+        }
+    }
+
+    ' ===== Scheduler Package =====
+    package scheduler {
+        class BatchJobScheduler {
+            +runBatchJob()
+        }
+    }
+
+    ' ===== Service Package =====
+    package service {
+        class SkillService {
+            +getAllData()
+            +getById(id)
+            +saveOrUpdate(skillDetails)
+            +deleteById(id)
+        }
+
+        class JobTaskTnUpload {
+            +getAllJobsData()
+            +getAllTasksData()
+            +getAllJobIds()
+            +getAllTaskIds()
+            +updateTnUploadWithJobIds()
+            +updateTnUploadWithTaskIds()
+            +deleteJobId(id)
+            +deleteTaskId(id)
+            +deleteUploadId(id)
+        }
+
+        class MyUserDetailsService {
+            +loadUserByUsername(username)
+        }
+    }
+
+    ' ===== Util Package =====
+    package util {
+        class JwtUtil {
+            +generateToken(username)
+            +validateToken(token, username)
+            +extractUsername(token)
+        }
+
+        class JwtRequestFilter {
+            +doFilterInternal(request, response, chain)
+        }
+    }
+
+    ' ===== Writer Package =====
+    package writer {
+        class JobWriter {
+            +write(chunk: Chunk<? extends MsJobs>)
+            -updateExistingEntity(existing: MsJobs, newData: MsJobs)
+        }
+        class SkillItemWriter {
+            +write(chunk: Chunk<? extends TnSkillUploadDetails>)
+            -updateExistingEntity(existing: TnSkillUploadDetails, newData: TnSkillUploadDetails)
+        }
+        class TaskWriter {
+            +write(chunk: Chunk<? extends MsTasks>)
+        }
+        class TnUploadWriter {
+            +write(chunk: Chunk<? extends TnUpload>)
+        }
+    }
+
+    ' ===== Swagger Package =====
+    package swagger {
+        class OpenAPIConfig {
+            -customOpenAPI()
+        }
+    }
+
+    ' ===== Main Application =====
+    class LoadApplication {
+        -jobLauncher: JobLauncher
+        -importSkillsJob: Job
+        -importMsTaskJob: Job
+        -importJob: Job
+        -updateTnUploadJob: Job
+        -jobs: Map<String, Job>
+        +main(args: String[])
+        +run(args: String[])
+        -runSelectedJobs(jobNames: String[])
+        -runAllJobs()
+        -runJob(job: Job, jobIdentifier: String)
+    }
+}
+
+' ===== Relationships =====
+SkillController --> SkillService
+SkillController --> JobTaskTnUpload
+AuthController --> MyUserDetailsService
+AuthController --> JwtUtil
+JwtRequestFilter --> JwtUtil
+JwtRequestFilter --> MyUserDetailsService
+
+SkillService --> TnSkillUploadDetails
+JobTaskTnUpload --> MsJobs
+JobTaskTnUpload --> MsTasks
+JobTaskTnUpload --> TnUpload
+
+TaskUploadProcessor --> MsTasks
+TaskUploadProcessor --> TnUpload
+
+MsJobReader --> MsJobs
+MsTaskReader --> MsTasks
+
+JobWriter --> MsJobs
+SkillItemWriter --> TnSkillUploadDetails
+TaskWriter --> MsTasks
+TnUploadWriter --> TnUpload
+
+MsJobRepository --> MsJobs
+MsTaskRepository --> MsTasks
+SkillRepository --> TnSkillUploadDetails
+TnUploadRepository --> TnUpload
+
+JobCompletionNotificationListener --> JobExecution
+SkillStepListener --> StepExecution
+
+BatchJobScheduler --> JobLauncher
+BatchJobScheduler --> importSkillsJob : Job
+
+LoadApplication --> JobLauncher
+LoadApplication --> importSkillsJob : Job
+LoadApplication --> importMsTaskJob : Job
+LoadApplication --> importJob : Job
+LoadApplication --> updateTnUploadJob : Job
+
+SkillController --> OpenAPIConfig
+AuthController --> OpenAPIConfig
+
+@enduml
