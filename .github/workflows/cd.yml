@@ -39,8 +39,9 @@ jobs:
           repository: ${{ secrets.INFRA_REPO }}  # e.g. your-username/spring-batch-infra
           token: ${{ secrets.INFRA_REPO_PAT }}
           path: infra
+          fetch-depth: 0   # ensure proper git history for commit
 
-      # Step 5: Update deployment.yaml with new image tag
+      # Step 5: Update deployment.yaml with new image
       - name: Update deployment.yaml
         working-directory: infra
         run: |
@@ -59,3 +60,4 @@ jobs:
             git commit -m "Deploy $IMAGE_FULL"
             git push origin main
           fi
+
