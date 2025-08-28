@@ -34,7 +34,7 @@ jobs:
 
       # Step 4: Build & run tests
       - name: Build & Test with Maven
-        run: mvn -B clean verify
+        run: mvn -B clean verify -Dspring.profiles.active=test
 
       # Step 5: Upload test reports if build fails
       - name: Upload test reports
