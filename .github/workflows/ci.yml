@@ -43,3 +43,11 @@ jobs:
         with:
           name: test-reports
           path: target/surefire-reports
+      # Step 6: Run the Spring Boot app (for demo/logs)
+      - name: Run Spring Boot Application
+        run: |
+          nohup mvn spring-boot:run -Dspring-boot.run.profiles=test > app.log 2>&1 &
+          sleep 40
+          echo "===== Application Logs ====="
+          cat app.log
+
